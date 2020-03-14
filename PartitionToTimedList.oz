@@ -60,6 +60,7 @@ fun {PartitionToTimedList Partition}
 		     false
 		  [] stretch(factor:F Part)then
 		     local
+			NP
 			P = {PartitionToTimedList Part}
 			fun{Stretch P F}
 			   local
@@ -84,13 +85,23 @@ fun {PartitionToTimedList Partition}
 
 			   in
 			      case P
-			      of H|nil then {StretchNote H F}
+			      of nil then nil
 			      [] H|T then {StretchNote H F}|{Stretch T F}
 			      end
 			   end
 			end
 		     in
-			{Stretch P F}|{PartitionToTimedList T}
+			NP={Stretch P F}
+			local
+			   fun{Ajouter P K}
+			      case P
+			      of nil then {PartitionToTimedList K}
+			      [] H|T then H|{Ajouter T K}
+			      end
+			   end
+			in
+			   {Ajouter NP T}
+			end			      
 		     end
 		     
 		  [] duration(seconds:S) then
@@ -108,7 +119,20 @@ fun {PartitionToTimedList Partition}
 end
 
       
-{Browse {PartitionToTimedList [ a stretch(factor:3.0 [a a a a a]) a ] }}
+{Browse {PartitionToTimedList [ stretch(factor:3.0 [a a a a a]) ] }}
 
-      
-{Browse a|a|a} 
+
+
+declare
+fun{Lol A}
+   case A
+   of nil then b
+   [] H|T then H|{Lol T}
+   end
+end
+
+{Browse {Lol a|a|a|nil}|nil}
+   
+B
+A = a|a|a|nil
+
