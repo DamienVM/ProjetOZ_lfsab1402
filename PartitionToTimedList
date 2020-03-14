@@ -31,7 +31,8 @@ fun {PartitionToTimedList Partition}
 
       fun {IsExtanded N}
 	 case N
-	 of silence then true
+	 of Atom then false
+	 [] silence then true
 	 [] note then true
 	 [] H|T then {IsExtanded H}
 	 else false
@@ -40,12 +41,20 @@ fun {PartitionToTimedList Partition}
 
       
    in
+      {Browse 1}
       case Partition
       of nil then nil
       [] H|T then
 	 if {IsExtanded H} then
 	    H|{PartitionToTimedList T}
+	 else case H
+	      of K|J then {ChordToExtended H}|{PartitionToTimedList T}
+	      [] Atom then {NoteToExtended H}|{PartitionToTimedList T}
+	      [] Name#Octave then {NoteToExtended H}|{PartitionToTimedList T}
+	      end
 	 end
       end
    end
 end
+
+{Browse {PartitionToTimedList [silence a#5 a a2 [b c]]}}
