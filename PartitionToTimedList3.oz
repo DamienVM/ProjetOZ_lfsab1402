@@ -41,7 +41,6 @@ fun {PartitionToTimedList Partition}
 
       
    in
-      {Browse 1}
       case Partition
       of nil then nil
       [] H|T then
