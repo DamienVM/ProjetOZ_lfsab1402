@@ -1,4 +1,6 @@
 local
+   [Project] = {Link ['Project2018.ozf']}
+   
    fun{IsExtanded N}
       if N == silence then false
       else case N
@@ -192,8 +194,20 @@ local
 
    fun{Add L1 L2}
       case L1
-      of nil then nil
-      [] H|T then H+L2.1|{Add T L2.2}
+      of nil then
+	 case L2
+	 of nil then
+	    nil
+	 [] H|T then
+	    H|{Add nil T}
+	 end
+      []H|T then
+	 case L2
+	 of nil then
+	    H|{Add T nil}
+	 []K|J then
+	    H+K|{Add T J}
+	 end
       end
    end
 
@@ -272,8 +286,31 @@ local
       {DoReverse Music nil}
    end
 
-   
+   fun{Mult L F}
+      case L
+      of nil then nil
+      [] H|T then
+	 F*H|{Mult T F}
+      end
+   end
 
+   fun{Merge L Ftc}
+      case L
+      of nil then nil
+      [] H|T then
+	 case H
+	 of F#Music
+	 then
+	    local
+	       Echantillon = {Mix Ftc Music}
+	       Intensite = {Mult Echantillon F}
+	    in
+	       {Add Intensite {Merge T Ftc}}
+	    end
+	 end
+      end
+   end
+   
    fun {PartitionToTimedList Partition}
       case Partition
       of nil then nil
@@ -359,7 +396,16 @@ local
 	    in
 	       {AjouterMix {Repeat N Echantillon} Mix P2T T}
 	    end
-	    
+	 []reverse(Music) then
+	    local
+	       Echantillon = {Mix P2T Music}
+	    in
+	       {AjouterMix {Reverse Echantillon} Mix P2T T}
+	    end
+	 []wave(N) then
+	    {AjouterMix {Project.readFile N} Mix P2T T}
+	 []merge(Musiques) then
+	    {AjouterMix {Merge Musiques P2T} Mix P2T T}
 	 end
       end
    end
@@ -377,13 +423,25 @@ in
    }
 
    {Browse {Mix PartitionToTimedList [repeat(amount:4
-					     partition([a a a]
-						      )
+					     [partition([a a a]
+						      )]
 					    )
 				     ]
 	   }
    }
-   {
+
+   {Browse {Mix PartitionToTimedList [reverse([partition([a a a])])]}}
+
+
+   {Browse {Mix PartitionToTimedList [merge( [0.5#[partition([a a a])]
+					      0.3#[partition([b b b b])]
+					     ]
+					   )
+				     ]
+	   }
+   }
+   
+					  
 end
 
 
