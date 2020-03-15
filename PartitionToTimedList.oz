@@ -58,10 +58,9 @@ fun {PartitionToTimedList Partition}
 		     false
 		  [] drone(note:N Part) then
 		     false
-		  [] stretch(factor:F Part)then
+		  elseif {Label H} == stretch orelse {Label H} == duration then
 		     local
-			NP
-			P = {PartitionToTimedList Part}
+			
 			fun{Stretch P F}
 			   local
 			      fun{StretchNote N F}
@@ -90,23 +89,27 @@ fun {PartitionToTimedList Partition}
 			      end
 			   end
 			end
-		     in
-			NP={Stretch P F}
-			local
-			   fun{Ajouter P K}
-			      case P
-			      of nil then {PartitionToTimedList K}
-			      [] H|T then H|{Ajouter T K}
-			      end
+
+			fun{Ajouter P K}
+			   case P
+			   of nil then {PartitionToTimedList K}
+			   [] H|T then H|{Ajouter T K}
 			   end
-			in
-			   {Ajouter NP T}
-			end			      
+			end
+			
+		     in
+			case H
+			of stretch(factor:F Part) then
+			   local
+			      P = {PartitionToTimedList Part}
+			      NP = {Stretch P F}
+			   in
+			      {Ajouter NP T}
+			   end
+			[] duration(seconds:S) then
+			   false
+			end
 		     end
-		     
-		  [] duration(seconds:S) then
-		     false
-		     
 		     
 		  else
 		     {NoteToExtended H}|{PartitionToTimedList T}
@@ -119,6 +122,4 @@ fun {PartitionToTimedList Partition}
 end
 
       
-{Browse {PartitionToTimedList [stretch(factor: 3.0 [a stretch(factor:3.0 [a a a a a]) a])] }}
-
-
+{Browse {PartitionToTimedList [stretch(factor: 3.0 [a stretch(factor:3.0 [a a5 a#5 silence]) a])] }}
