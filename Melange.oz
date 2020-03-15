@@ -310,6 +310,21 @@ local
 	 end
       end
    end
+
+   fun{Loop D L Lin}
+      if D == 0 then nil
+      else
+	 case L
+	 of nil then
+	    {Loop D Lin Lin}
+	 [] H|T then
+	    H|{Loop D-1 T Lin}
+	 end
+      end
+   end
+
+
+   
    
    fun {PartitionToTimedList Partition}
       case Partition
@@ -406,6 +421,13 @@ local
 	    {AjouterMix {Project.readFile N} Mix P2T T}
 	 []merge(Musiques) then
 	    {AjouterMix {Merge Musiques P2T} Mix P2T T}
+	 []loop(seconds:D Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	       D = D*44100.0
+	    in
+	       {AjouterMix {Loop D Echantillon Echantillon} Mix P2T T}
+	    end
 	 end
       end
    end
@@ -440,6 +462,7 @@ in
 				     ]
 	   }
    }
+   {Browse {Mix PartitionToTimedList [loop(seconds:2.0 [partition([a a a])])]}}
    
 					  
 end
