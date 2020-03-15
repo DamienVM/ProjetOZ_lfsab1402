@@ -73,8 +73,25 @@ fun {PartitionToTimedList Partition}
 			case H
 			of transpose(semitones:S Part)then
 			   false
-			[] drone(note:N Part) then
-			   false
+			[] drone(note:N amount:A) then
+			   local
+			      fun{ExtendN N}
+				 case N
+				 of H|T then {ChordToExtended N}
+				 else {NoteToExtended N}
+				 end
+			      end
+			      fun{Drone N A P}
+				 if A == 0 then P
+				 else {Drone N A-1 (N|P)}
+				 end
+			      end
+			      NP
+			   in
+			      NP = {Drone {ExtendN N} A nil}
+			      {Ajouter NP T}
+			   end
+			   
 			elseif Transformation == stretch orelse Transformation == duration then
 			   local
 			      fun{Stretch P F}
@@ -130,4 +147,4 @@ fun {PartitionToTimedList Partition}
    end
 end
       
-{Browse {PartitionToTimedList [stretch(factor: 3.0 [a stretch(factor:3.0 [a a5 a#5 silence]) a])] }}
+{Browse {PartitionToTimedList [a drone(note:a#5 amount:5) a ] }}
