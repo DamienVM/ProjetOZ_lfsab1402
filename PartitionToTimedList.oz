@@ -228,6 +228,6 @@ end
 
 
 
-{Browse {PartitionToTimedList [a transpose([a a5 a6] semitones:~1)]}}
+{Browse {PartitionToTimedList [a transpose([a a5 a6] semitones:~25)]}}
 
 
