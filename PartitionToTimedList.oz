@@ -1,5 +1,5 @@
 declare
-%Fonction qui renvoie true si N est une note ou un chord extanded
+
 fun{IsExtanded N}
    if N == silence then false
    else case N
@@ -13,7 +13,6 @@ fun{IsExtanded N}
    end
 end
 
-%Fonction qui renvoie une note en note extanded
 fun {NoteToExtended Note}
    case Note
    of Name#Octave then
@@ -34,7 +33,6 @@ fun {NoteToExtended Note}
    end
 end
 
-%Fonction qui transforme toutes les notes d'un chord en note extanded
 fun {ChordToExtended Chord}
    case Chord
    of nil then nil
@@ -42,7 +40,6 @@ fun {ChordToExtended Chord}
    end
 end
 
-%Fonction qui assemble une liste P à l'appel récussif de PartitionToTimed list
 fun{Ajouter P K}
    case P
    of nil then {PartitionToTimedList K}
@@ -50,8 +47,6 @@ fun{Ajouter P K}
    end
 end
 
-%NumberToNote permemet grace a un noméro d'acceder au nom et au sharp d'une note
-%Premet le travail inverse de la fonction NoteToNumb
 NumberToNote = numbertonotes(0:note(name:b sharp:false)
 			     1: note(name:c sharp:false)
 			     2: note(name:c sharp:true)
@@ -66,7 +61,6 @@ NumberToNote = numbertonotes(0:note(name:b sharp:false)
 			     11:note(name:a sharp:true)
 			     12:note(name:b sharp:false))
 
-%Trouve le numéro associe a une note N c=1 c#=2 d=3 d#=4 e=5 f=6 f#=7 g=8 g#=9 a=10 a#=11 b=12
 fun{NoteToNumb N}
    local
       S = if N.sharp then 1 else 0 end
@@ -83,9 +77,9 @@ fun{NoteToNumb N}
    end
 end
 
-%Fonction qui permet de transposer une partition P de S demi-tons 
 fun{Transpose P S}
    local
+      NP = {PartitionToTimedList P}
       fun{TransNote N S}
 	 case N
 	 of nil then nil
@@ -110,7 +104,7 @@ fun{Transpose P S}
 	 end
       end      
    in
-      case P
+      case NP
       of nil then nil
       [] H|T then
 	 {TransNote H S}|{Transpose T S}
@@ -118,7 +112,6 @@ fun{Transpose P S}
    end
 end
 
-%Fonction qui renvoie N en note/chord extanded
 fun{ExtendN N}
    case N
    of H|T then {ChordToExtended N}
@@ -126,14 +119,13 @@ fun{ExtendN N}
    end
 end
 
-%Fonction qui renvoie une liste de la note N repetee A fois
 fun{Drone N A P}
    if A == 0 then P
    else {Drone N A-1 (N|P)}
    end
 end
 
-%Fonction qui alonge la durée de la partition P avec le facteur F
+declare
 fun{Stretch P F}
    local
       fun{StretchNote N F}
@@ -143,11 +135,11 @@ fun{Stretch P F}
 	       fun {StretchChord C F}
 		  case C
 		  of nil then nil
-		  [] H|T then {StretchNote N F}|{StretchChord T F}
+		  [] H|T then {StretchNote H F}|{StretchChord T F}
 		  end
 	       end
 	    in
-	       {StretchChord H F}
+	       {StretchChord N F}
 	    end
 	 elseif {Label N} == note then
 	    note(name:N.name octave:N.octave sharp:N.sharp duration:(N.duration*F) instrument:N.instrument)
@@ -157,12 +149,11 @@ fun{Stretch P F}
    in
       case P
       of nil then nil
-      [] H|T then {StretchNote H F}|{StretchNote T F}
+      [] H|T then {StretchNote H F}|{Stretch T F}
       end
    end
 end
 
-%Function qui fixe la durée de la partition Part a S
 fun{Duration Part S}
    local
       fun{Sum Part Acc}
@@ -190,9 +181,7 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Fonction récursive qui transforme chaque element de la liste Partition en extended sound 
 fun {PartitionToTimedList Partition}
    case Partition
    of nil then nil
@@ -263,6 +252,9 @@ end
 
 
 
-{Browse {PartitionToTimedList [ stretch(factor:3.0 [a [b c]])]}}
+{Browse {PartitionToTimedList [duration([a a a]  seconds:7.0)
+			       stretch([a [a a]] factor:2.0)
+			      ]
+	}
+}
 
-{Browse 1}
