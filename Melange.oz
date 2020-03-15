@@ -318,14 +318,34 @@ local
 	 of nil then
 	    {Loop D Lin Lin}
 	 [] H|T then
-	    H|{Loop D-1 T Lin}
+	    H|{Loop (D-1) T Lin}
 	 end
       end
    end
 
+   fun{Clip Low Hi Music}
+      case Music
+      of nil then nil
+      [] H|T then
+	 if H > Hi then
+	    Hi|{Clip Low Hi T}
+	 elseif H < Low then
+	    Low|{Clip Low Hi T}
+	 else
+	    H|{Clip Low Hi T}
+	 end
+      end
+   end
 
-   
-   
+   fun{Echo Silence Factor Music}
+      local
+	 Music2 = {Mult Music Factor}
+	 Ec = {Assembler Silence Music2}
+      in
+	 {Add Music Ec}
+      end
+   end
+
    fun {PartitionToTimedList Partition}
       case Partition
       of nil then nil
@@ -424,9 +444,23 @@ local
 	 []loop(seconds:D Musique) then
 	    local
 	       Echantillon = {Mix P2T Musique}
-	       D = D*44100.0
+	       ND = D*44100.0
+	       NND = {FloatToInt ND}
 	    in
-	       {AjouterMix {Loop D Echantillon Echantillon} Mix P2T T}
+	       {AjouterMix {Loop NND Echantillon Echantillon} Mix P2T T}
+	    end
+	 []clip(low:L high:H Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	    in
+	       {AjouterMix {Clip L H Echantillon} Mix P2T T}
+	    end
+	 []echo(delay:D decay:F Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	       Silence = {Mix P2T [partition([silence(duration:D)])]}
+	    in
+	       {AjouterMix {Echo Silence F Echantillon} Mix P2T T}
 	    end
 	 end
       end
@@ -451,27 +485,24 @@ in
 				     ]
 	   }
    }
-
-   {Browse {Mix PartitionToTimedList [reverse([partition([a a a])])]}}
-
-
-   {Browse {Mix PartitionToTimedList [merge( [0.5#[partition([a a a])]
-					      0.3#[partition([b b b b])]
-					     ]
-					   )
+   
+   {Browse {Mix PartitionToTimedList [loop(seconds:1.0 [partition([a a a])
+						       ]
+					  )
 				     ]
 	   }
    }
-   {Browse {Mix PartitionToTimedList [loop(seconds:2.0 [partition([a a a])])]}}
-   
-					  
+
+   {Browse {Mix PartitionToTimedList [clip(low:0.02 high:0.03 [partition([a a a])])]}}
+
+   {Browse {Mix PartitionToTimedList [echo(delay:0.002 decay:0.5 [partition([a a a])])]}}
+  			  
 end
 
 
 
    
 
-   
 
 
    
