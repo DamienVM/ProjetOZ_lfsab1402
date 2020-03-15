@@ -72,7 +72,83 @@ fun {PartitionToTimedList Partition}
 		     then
 			case H
 			of transpose(semitones:S Part)then
-			   false
+			   local
+			      NumberToNote = numbertonotes(0:note(name:b sharp:false)
+							   1: note(name:c sharp:false)
+							   2: note(name:c sharp:true)
+							   3: note(name:d sharp:false)
+							   4: note(name:d sharp:true)
+							   5: note(name:e sharp:false)
+							   6: note(name:f sharp:false)
+							   7: note(name:f sharp:true)
+							   8: note(name:g sharp:false)
+							   9: note(name:g sharp:true)
+							   10:note(name:a sharp:false)
+							   11:note(name:a sharp:true)
+							   12:note(name:b sharp:false))
+
+			      fun{NoteToNumb N}
+				 local
+				    S = if N.sharp then 1 else 0 end
+				    Name = N.name
+				 in
+				    if Name == c then 1+S
+				    elseif Name == d then 3+S
+				    elseif Name == e then 5
+				    elseif Name == f then 6+S
+				    elseif Name == g then 8+S
+				    elseif Name == a then 10+S
+				    else 12
+				    end
+				 end
+			      end
+
+
+			      fun{Transpose P S}
+				 local
+				    NP = {PartitionToTimedList P}
+				    fun{TransNote N S}
+				       case N
+				       of nil then nil
+				       [] H|T then {TransNote H S}|{TransNote T S}
+				       else
+					  local NN NO NNumb Pas
+					  in
+					     if S >= 0 then
+						Pas = {NoteToNumb N}+S
+						NO = N.octave+( (Pas-1) div 12)
+						NNumb = (Pas mod 12 )
+						NN =  NumberToNote.NNumb
+						note(name:NN.name sharp:NN.sharp octave:NO duration:N.duration instrument:N.instrument)
+					     else
+						Pas = {NoteToNumb N}+S
+						NO = N.octave+( (Pas-12) div 12)
+						NNumb = ((Pas - 12) mod  12)+12
+						NN =  NumberToNote.NNumb
+						note(name:NN.name sharp:NN.sharp octave:NO duration:N.duration instrument:N.instrument)
+					     end
+
+					  end
+				       end
+				    end
+
+				 in
+				    case NP
+				    of nil then nil
+				    [] H|T then
+				       {TransNote H S}|{Transpose T S}
+				    end
+				 end
+			      end
+			      P
+			      NP
+			   in
+			      P = {PartitionToTimedList Part}
+			      NP = {Transpose P S}
+			      {Ajouter NP T}
+			      
+			   end
+			   
 			[] drone(note:N amount:A) then
 			   local
 			      fun{ExtendN N}
@@ -146,5 +222,12 @@ fun {PartitionToTimedList Partition}
       end
    end
 end
-      
-{Browse {PartitionToTimedList [a drone(note:a#5 amount:5) a ] }}
+
+
+
+
+
+
+{Browse {PartitionToTimedList [a transpose([a a5 a6] semitones:~1)]}}
+
+
