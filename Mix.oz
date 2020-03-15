@@ -1,8 +1,85 @@
 declare
+fun{Hauteur N}
+   case N
+   of note(name:Name octave:O sharp:S duration:D instrument:I) then
+      12*(O-4)+{NoteToNumb N}-10
+   end
+end
+
+fun{Add L1 L2}
+   case L1
+   of nil then nil
+   [] H|T then H+L2.1|{Add T L2.2}
+   end
+end
+
+fun {NoteToEchantillon N}
+   case N
+   of H|T then
+      local
+	 fun{ChordToEchantillon C}
+	    case C
+	    of H|nil then {NoteToEchantillon H}
+	    [] H|T then
+	       {Add {NoteToEchantillon H} {ChordToEchantillon T}}
+	    end
+	 end
+      in
+	 {ChordToEchantillon N}
+      end
+   [] note(name:Name octave:O sharp:S duration:D instrument:I) then
+      local
+	 I = {FloatToInt D*44100.0}
+	 H = {IntToFloat {Hauteur N}}
+	 F = {Pow 2.0 (H/12.0)} *440.0
+      in
+	 {CreateEchantillon I F nil}
+      end
+   [] silence(duration:D) then
+      local
+	 I = {FloatToInt D*44100.0}
+      in
+	 {CreateEchantillon I 0.0 nil}
+      end
+   end
+end
+
+fun{CreateEchantillon I Freq Echantillon}
+   if I == 0 then
+      Echantillon
+   elseif Freq == 0.0 then
+       {CreateEchantillon I-1 Freq 0.0|Echantillon}
+   else
+      local
+	 E = 0.5*{Sin (2.0*3.14159265359*Freq*({IntToFloat I}/44100.0))}
+      in
+	 {CreateEchantillon I-1 Freq E|Echantillon}
+      end
+   end
+end
+
+fun{Assembler H T}
+   case H
+   of nil then T
+   [] K|J then K|{Assembler J T}
+   end
+end
+
+fun{Echantillon Part}
+   case Part
+   of nil then nil
+   [] H|T then {Assembler {NoteToEchantillon H} {Echantillon T}}
+   end
+end
+
+
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+declare
 fun{Mix P2T Music}
    case Music
    of nil then nil
-   else H|T then
+   [] H|T then
       local
 	 fun {Ajouter P K}
 	    case P
@@ -12,84 +89,16 @@ fun{Mix P2T Music}
 	 end
       in
 	 case H
-	 of samples(Sample) then
+	 of samples(Sample)then
 	    {Ajouter Sample T}
-	    
-	 [] partition(Part)
+	 [] partition(Part)then
 	    local
-	       P = {P2T Part}
-	       fun{Hauteur N}
-		  case N
-		  of note(name:N sharp:S octave:O duration:D instrument:I)
-		     local
-			NumberToNote = numbertonotes(0:note(name:b sharp:false)
-						     1: note(name:c sharp:false)
-						     2: note(name:c sharp:true)
-						     3: note(name:d sharp:false)
-						     4: note(name:d sharp:true)
-						     5: note(name:e sharp:false)
-						     6: note(name:f sharp:false)
-						     7: note(name:f sharp:true)
-						     8: note(name:g sharp:false)
-						     9: note(name:g sharp:true)
-						     10:note(name:a sharp:false)
-						     11:note(name:a sharp:true)
-						     12:note(name:b sharp:false))
-
-			fun{NoteToNumb N}
-			   local
-			      S = if N.sharp then 1 else 0 end
-			      Name = N.name
-			   in
-			      if Name == c then 1+S
-			      elseif Name == d then 3+S
-			      elseif Name == e then 5
-			      elseif Name == f then 6+S
-			      elseif Name == g then 8+S
-			      elseif Name == a then 10+S
-			      else 12
-			      end
-			   end
-			end
-		     in
-			12.0*(N.octave-4)+{NoteToNumb N}-10
-		     end
-		  end
-	       end
-	       F
+	       NP = {P2T Part}
 	    in
-	       case P
-	       of nil then nil
-	       [] H|T then
-		  case H of K|J then
-		  end
-		  
-
-	       [] note(name:N sharp:S octave:O duration:D instrument:I)
-	       then
-		  local
-		     
-		     H F 
-		  in
-		     H = { Hauteur N}
-		     F = {Pow 2 (H/12.0)} *440
-		  end
-		  
-		    
-		  
-
+	       {Ajouter {Echantillon NP} T}
 	    end
-	 
-	 
-      
-end
 	 end
       end
    end
 end
 
-
-{Browse {Pow 2 2}}
-{Browse 1}
-
-	    
