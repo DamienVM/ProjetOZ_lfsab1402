@@ -119,20 +119,6 @@ fun {PartitionToTimedList Partition}
 end
 
       
-{Browse {PartitionToTimedList [ stretch(factor:3.0 [a a a a a]) ] }}
+{Browse {PartitionToTimedList [stretch(factor: 3.0 [a stretch(factor:3.0 [a a a a a]) a])] }}
 
-
-
-declare
-fun{Lol A}
-   case A
-   of nil then b
-   [] H|T then H|{Lol T}
-   end
-end
-
-{Browse {Lol a|a|a|nil}|nil}
-   
-B
-A = a|a|a|nil
 
