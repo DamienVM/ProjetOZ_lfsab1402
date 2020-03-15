@@ -2,8 +2,9 @@ local
    % See project statement for API details.
    [Project] = {Link ['Project2018.ozf']}
    Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   %Verrifie si N est de un recod note ou chord
    fun{IsExtanded N}
       if N == silence then false
       else case N
@@ -17,6 +18,7 @@ local
       end
    end
 
+   %Retourne la Note en record note
    fun {NoteToExtended Note}
       case Note
       of Name#Octave then
@@ -37,6 +39,7 @@ local
       end
    end
 
+    %Retourne la Chord en record chord
    fun {ChordToExtended Chord}
       case Chord
       of nil then nil
@@ -44,6 +47,7 @@ local
       end
    end
 
+   %Ajoute l'appel de Ftc pour K à la fin de la liste P .utilise pour PartitionToTimedList
    fun{Ajouter P Fct K}
       case P
       of nil then {Fct K}
@@ -51,14 +55,15 @@ local
       end
    end
 
+   %Ajoute l'appel de Ftc pour K à la fin de la liste P (utilise pour Mix)
    fun{AjouterMix P Fct P2T K}
       case P
       of nil then {Fct P2T K}
       [] H|T then H|{AjouterMix T Fct P2T K}
       end
    end
-      
 
+   %Record contenant les information  des notes d'une octave en fonction d'un nombre
    NumberToNote = numbertonotes(0:note(name:b sharp:false)
 				1: note(name:c sharp:false)
 				2: note(name:c sharp:true)
@@ -72,7 +77,8 @@ local
 				10:note(name:a sharp:false)
 				11:note(name:a sharp:true)
 				12:note(name:b sharp:false))
-
+   
+   %Fonction retourant un nombre en fonction de ses informations. nom et sharpde S semitones
    fun{NoteToNumb N}
       local
 	 S = if N.sharp then 1 else 0 end
@@ -89,6 +95,8 @@ local
       end
    end
 
+   %Fonction renourant la partition P transposee de S semitones
+   %Transnote retourne une note ou un chord transpose de S semitones
    fun{Transpose P S}
       local
 	 NP = {PartitionToTimedList P}
@@ -124,19 +132,22 @@ local
       end
    end
 
+   %retourne la note N en record note ou chord
    fun{ExtendN N}
       case N
       of H|T then {ChordToExtended N}
       else {NoteToExtended N}
       end
    end
-
+   
+   %Retourne une liste composee de A fois la note N
    fun{Drone N A P}
       if A == 0 then P
       else {Drone N A-1 (N|P)}
       end
    end
 
+   %Retoune la Partition P donc la duree des notes a ete multiplie par F
    fun{Stretch P F}
       local
 	 fun{StretchNote N F}
@@ -165,6 +176,7 @@ local
       end
    end
 
+   %Retoune la partition Part pour qu elle ait une duree S
    fun{Duration Part S}
       local
 	 fun{Sum Part Acc}
@@ -188,13 +200,15 @@ local
       end
    end
 
+   %Renvoie le normbre de semitons separant la note N de la note a4
    fun{Hauteur N}
       case N
       of note(name:Name octave:O sharp:S duration:D instrument:I) then
 	 12*(O-4)+{NoteToNumb N}-10
       end
    end
-
+   
+   %Additionne les listes L1 et L2. Si une liste est plus petite que l autre, place la fin de la plus longue .
    fun{Add L1 L2}
       case L1
       of nil then
@@ -214,6 +228,7 @@ local
       end
    end
 
+   %Fonction qui renvoie une liste d echantillons en fonction de la note N
    fun {NoteToEchantillon N}
       case N
       of H|T then
@@ -245,6 +260,7 @@ local
       end
    end
 
+   %Cree une liste de I echantillon en fonction de la frequence
    fun{CreateEchantillon I Freq Echantillon}
       if I == 0 then
 	 Echantillon
@@ -259,6 +275,7 @@ local
       end
    end
 
+   %Renvoie la liste H suivi de la liste  T
    fun{Assembler H T}
       case H
       of nil then T
@@ -266,6 +283,7 @@ local
       end
    end
 
+   %Retourne la partition Part en une suite d echantillon
    fun{Echantillon Part}
       case Part
       of nil then nil
@@ -273,12 +291,14 @@ local
       end
    end
 
+   %Repete N fois la musique Music
    fun{Repeat N Music}
       if N == 0 then nil
       else {Assembler Music {Repeat N-1 Music}}
       end
    end
 
+   %Inverse les elements de X 
    fun {DoReverse X Y}
       case X of nil then Y
       [] X|Xr then {DoReverse Xr X|Y}
@@ -289,6 +309,7 @@ local
       {DoReverse Music nil}
    end
 
+   %Multiplie chaque element de la liste F par le facteur F
    fun{Mult L F}
       case L
       of nil then nil
@@ -297,6 +318,7 @@ local
       end
    end
 
+   %Retourne la somme des echantillons des musiques de L multipliees par leur intensite F 
    fun{Merge L Ftc}
       case L
       of nil then nil
@@ -314,6 +336,7 @@ local
       end
    end
 
+   %Boucle la liste L jusqu a avoir une liste de longueur D. Lin permet de garder la liste intacte pour repeter la fonction
    fun{Loop D L Lin}
       if D == 0 then nil
       else
@@ -326,6 +349,7 @@ local
       end
    end
 
+   %Contraint des echantillons a respecter la valeur plancher Low et plafond Hi
    fun{Clip Low Hi Music}
       case Music
       of nil then nil
@@ -340,6 +364,7 @@ local
       end
    end
 
+   %Introduit un echo dans la musique avec un silence de Silence secondes
    fun{Echo Silence Factor Music}
       local
 	 Music2 = {Mult Music Factor}
@@ -349,6 +374,7 @@ local
       end
    end
 
+   %Change l intensite au debut de la musique pendant D secondes
    fun{Fade D M}
       local
 	 Nbr = D * 44100.0
@@ -375,6 +401,7 @@ local
       end
    end
 
+   %Recupere une portion de la musique entre le temps S et F
    fun{Cut S F Music}
       local
 	 fun{Retirer Start Music}
@@ -543,7 +570,7 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   Music = {Project.load 'joy.dj.oz'}
+   Music = {Project.load 'example.dj.oz'}
    Start
 
    % Uncomment next line to insert your tests.
