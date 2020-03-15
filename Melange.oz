@@ -346,6 +346,59 @@ local
       end
    end
 
+   fun{Fade D M}
+      local
+	 Nbr = D * 44100.0
+	 fun{CreateE Nbr I}
+	    if I == Nbr then nil
+	    else
+	       I/Nbr|{CreateE Nbr I+1.0}
+	    end
+	 end
+	 fun{Fade2 E M}
+	    case E
+	    of nil then M
+	    [] H|T then
+	       case M
+	       of K|J then
+		  H*K|{Fade2 T J}
+	       end
+	    end
+	 end
+	 E
+      in
+	 E = {CreateE Nbr 0.0}
+	 {Fade2 E M}
+      end
+   end
+
+   fun{Cut S F Music}
+      local
+	 fun{Retirer Start Music}
+	    case Music
+	    of H|T then
+	       if Start =< 0.0 then Music
+	       else
+		  {Retirer Start-1.0 T}
+	       end
+	    end
+	 end
+
+	 fun{Prendre Finish Music}
+	    if Finish =< 0.0 then nil
+	    else case Music
+		 of nil then 0.0|{Prendre Finish-1.0 nil}
+		 [] H|T then H|{Prendre Finish-1.0 T}
+		 end
+	    end
+	 end
+	 Start = S*44100.0
+	 Finish= (F-S)*44100.0
+      in
+	 {Prendre Finish {Retirer Start Music}}
+      end
+   end
+
    fun {PartitionToTimedList Partition}
       case Partition
       of nil then nil
@@ -462,6 +515,22 @@ local
 	    in
 	       {AjouterMix {Echo Silence F Echantillon} Mix P2T T}
 	    end
+	 []fade(start:S out:O Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	       Ne = {Fade S Echantillon}
+	       NeReverse ={Reverse Ne}
+	       Ne2 ={Fade O NeReverse}	       
+	    in
+	       {AjouterMix {Reverse Ne2} Mix P2T T}
+	    end
+	 []cut(start:S finish:F Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	    in
+	       {AjouterMix {Cut S F Echantillon} Mix P2T T}
+	    end
+	    
 	 end
       end
    end
@@ -478,25 +547,9 @@ in
 	   }
    }
 
-   {Browse {Mix PartitionToTimedList [repeat(amount:4
-					     [partition([a a a]
-						      )]
-					    )
-				     ]
-	   }
-   }
-   
-   {Browse {Mix PartitionToTimedList [loop(seconds:1.0 [partition([a a a])
-						       ]
-					  )
-				     ]
-	   }
-   }
+   {Browse {Mix PartitionToTimedList [fade(start:2.0 out:0.1 [partition([a a a a a a a])])]}}
 
-   {Browse {Mix PartitionToTimedList [clip(low:0.02 high:0.03 [partition([a a a])])]}}
-
-   {Browse {Mix PartitionToTimedList [echo(delay:0.002 decay:0.5 [partition([a a a])])]}}
-  			  
+   {Browse {Mix PartitionToTimedList [cut(start:2.0 finish:4.0 [partition([a a a a a a a])])]}}
 end
 
 
