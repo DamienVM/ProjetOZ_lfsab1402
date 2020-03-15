@@ -44,12 +44,20 @@ local
       end
    end
 
-   fun{Ajouter P K}
+   fun{Ajouter P Fct K}
       case P
-      of nil then {PartitionToTimedList K}
-      [] H|T then H|{Ajouter T K}
+      of nil then {Fct K}
+      [] H|T then H|{Ajouter T Fct K}
       end
    end
+
+   fun{AjouterMix P Fct P2T K}
+      case P
+      of nil then {Fct P2T K}
+      [] H|T then H|{AjouterMix T Fct P2T K}
+      end
+   end
+      
 
    NumberToNote = numbertonotes(0:note(name:b sharp:false)
 				1: note(name:c sharp:false)
@@ -129,7 +137,6 @@ local
       end
    end
 
-
    fun{Stretch P F}
       local
 	 fun{StretchNote N F}
@@ -166,7 +173,7 @@ local
 	    [] H|T then
 	       case H
 	       of K|J then
-	       {Sum T Acc+K.duration}
+		  {Sum T Acc+K.duration}
 	       else
 		  {Sum T Acc+H.duration}
 	       end
@@ -177,21 +184,33 @@ local
       in
 	 Duree = {Sum Part 0.0}
 	 Facteur = S/Duree
-	 {Stretch Part Facteur} 
+	 {Stretch Part Facteur}
       end
    end
 
    fun{Hauteur N}
       case N
-      of note(name:Name octave:O sharp:S duration:D instrument:I) then	 
+      of note(name:Name octave:O sharp:S duration:D instrument:I) then
 	 12*(O-4)+{NoteToNumb N}-10
       end
    end
 
    fun{Add L1 L2}
       case L1
-      of nil then nil
-      [] H|T then H+L2.1|{Add T L2.2}
+      of nil then
+	 case L2
+	 of nil then
+	    nil
+	 [] H|T then
+	    H|{Add nil T}
+	 end
+      []H|T then
+	 case L2
+	 of nil then
+	    H|{Add T nil}
+	 []K|J then
+	    H+K|{Add T J}
+	 end
       end
    end
 
@@ -254,6 +273,135 @@ local
       end
    end
 
+   fun{Repeat N Music}
+      if N == 0 then nil
+      else {Assembler Music {Repeat N-1 Music}}
+      end
+   end
+
+   fun {DoReverse X Y}
+      case X of nil then Y
+      [] X|Xr then {DoReverse Xr X|Y}
+      end
+   end
+   
+   fun {Reverse Music}
+      {DoReverse Music nil}
+   end
+
+   fun{Mult L F}
+      case L
+      of nil then nil
+      [] H|T then
+	 F*H|{Mult T F}
+      end
+   end
+
+   fun{Merge L Ftc}
+      case L
+      of nil then nil
+      [] H|T then
+	 case H
+	 of F#Music
+	 then
+	    local
+	       Echantillon = {Mix Ftc Music}
+	       Intensite = {Mult Echantillon F}
+	    in
+	       {Add Intensite {Merge T Ftc}}
+	    end
+	 end
+      end
+   end
+
+   fun{Loop D L Lin}
+      if D == 0 then nil
+      else
+	 case L
+	 of nil then
+	    {Loop D Lin Lin}
+	 [] H|T then
+	    H|{Loop (D-1) T Lin}
+	 end
+      end
+   end
+
+   fun{Clip Low Hi Music}
+      case Music
+      of nil then nil
+      [] H|T then
+	 if H > Hi then
+	    Hi|{Clip Low Hi T}
+	 elseif H < Low then
+	    Low|{Clip Low Hi T}
+	 else
+	    H|{Clip Low Hi T}
+	 end
+      end
+   end
+
+   fun{Echo Silence Factor Music}
+      local
+	 Music2 = {Mult Music Factor}
+	 Ec = {Assembler Silence Music2}
+      in
+	 {Add Music Ec}
+      end
+   end
+
+   fun{Fade D M}
+      local
+	 Nbr = D * 44100.0
+	 fun{CreateE Nbr I}
+	    if I == Nbr then nil
+	    else
+	       I/Nbr|{CreateE Nbr I+1.0}
+	    end
+	 end
+	 fun{Fade2 E M}
+	    case E
+	    of nil then M
+	    [] H|T then
+	       case M
+	       of K|J then
+		  H*K|{Fade2 T J}
+	       end
+	    end
+	 end
+	 E
+      in
+	 E = {CreateE Nbr 0.0}
+	 {Fade2 E M}
+      end
+   end
+
+   fun{Cut S F Music}
+      local
+	 fun{Retirer Start Music}
+	    case Music
+	    of H|T then
+	       if Start =< 0.0 then Music
+	       else
+		  {Retirer Start-1.0 T}
+	       end
+	    end
+	 end
+
+	 fun{Prendre Finish Music}
+	    if Finish =< 0.0 then nil
+	    else case Music
+		 of nil then 0.0|{Prendre Finish-1.0 nil}
+		 [] H|T then H|{Prendre Finish-1.0 T}
+		 end
+	    end
+	 end
+	 Start = S*44100.0
+	 Finish= (F-S)*44100.0
+      in
+	 {Prendre Finish {Retirer Start Music}}
+      end
+   end
+
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -283,14 +431,14 @@ local
 			in
 			   P = {PartitionToTimedList Part}
 			   NP = {Transpose P S}
-			   {Ajouter NP T}
+			   {Ajouter NP PartitionToTimedList T}
 			end
 		     [] drone(note:N amount:A) then
 			local
 			   NP
 			in
 			   NP = {Drone {ExtendN N} A nil}
-			   {Ajouter NP T}
+			   {Ajouter NP PartitionToTimedList T}
 			end
 
 		     elseif Transformation == stretch orelse Transformation == duration then
@@ -300,21 +448,21 @@ local
 			      P = {PartitionToTimedList Part}
 			      NP = {Stretch P F}
 			   in
-			      {Ajouter NP T}
+			      {Ajouter NP PartitionToTimedList T}
 			   end
-		     [] duration(seconds:S Part) then
+			[] duration(seconds:S Part) then
 			   local
 			      N = {PartitionToTimedList Part}
 			      NP
 			   in
 			      NP = {Duration N S}
-			      {Ajouter NP T}
+			      {Ajouter NP PartitionToTimedList T}
 			   end
 			end
 		     end
 		  else
-		  {NoteToExtended H}|{PartitionToTimedList T}
-		  end
+		     {NoteToExtended H}|{PartitionToTimedList T}
+		  end	       
 	       end
 	    end
 	 end
@@ -323,28 +471,72 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   fun {Mix P2T Music}
+   fun{Mix P2T Music}
       case Music
       of nil then nil
       [] H|T then
-	 local
-	    fun {Ajouter P K}
-	       case P
-	       of nil then {Mix P2T K}
-	       [] H|T then H|{Ajouter T K}
-	       end
+	 case H
+	 of samples(Sample)then
+	    {AjouterMix Sample Mix P2T T}
+	 [] partition(Part)then
+	    local
+	       NP = {P2T Part}
+	    in
+	       {AjouterMix {Echantillon NP} Mix P2T T}
 	    end
-	 in
-	    case H
-	    of samples(Sample)then
-	       {Ajouter Sample T}
-	    [] partition(Part)then
-	       local
-		  NP = {P2T Part}
-	       in
-		  {Echantillon NP}
-	       end
+	 []repeat(amount:N Music) then
+	    local
+	       Echantillon = {Mix P2T Music}
+	    in
+	       {AjouterMix {Repeat N Echantillon} Mix P2T T}
 	    end
+	 []reverse(Music) then
+	    local
+	       Echantillon = {Mix P2T Music}
+	    in
+	       {AjouterMix {Reverse Echantillon} Mix P2T T}
+	    end
+	 []wave(N) then
+	    {AjouterMix {Project.readFile N} Mix P2T T}
+	 []merge(Musiques) then
+	    {AjouterMix {Merge Musiques P2T} Mix P2T T}
+	 []loop(seconds:D Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	       ND = D*44100.0
+	       NND = {FloatToInt ND}
+	    in
+	       {AjouterMix {Loop NND Echantillon Echantillon} Mix P2T T}
+	    end
+	 []clip(low:L high:H Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	    in
+	       {AjouterMix {Clip L H Echantillon} Mix P2T T}
+	    end
+	 []echo(delay:D decay:F Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	       Silence = {Mix P2T [partition([silence(duration:D)])]}
+	    in
+	       {AjouterMix {Echo Silence F Echantillon} Mix P2T T}
+	    end
+	 []fade(start:S out:O Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	       Ne = {Fade S Echantillon}
+	       NeReverse ={Reverse Ne}
+	       Ne2 ={Fade O NeReverse}	       
+	    in
+	       {AjouterMix {Reverse Ne2} Mix P2T T}
+	    end
+	 []cut(start:S finish:F Musique) then
+	    local
+	       Echantillon = {Mix P2T Musique}
+	    in
+	       {AjouterMix {Cut S F Echantillon} Mix P2T T}
+	    end
+	    
 	 end
       end
    end
