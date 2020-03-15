@@ -53,66 +53,75 @@ fun {PartitionToTimedList Partition}
 	       of K|J then {ChordToExtended H}|{PartitionToTimedList T}
 	       [] Name#Octave then {NoteToExtended H}|{PartitionToTimedList T}
 	       else
-		  case H
-		  of transpose(semitones:S Part)then
-		     false
-		  [] drone(note:N Part) then
-		     false
-		  elseif {Label H} == stretch orelse {Label H} == duration then
-		     local
-			
-			fun{Stretch P F}
-			   local
-			      fun{StretchNote N F}
-				 case N
-				 of H|T then
-				    local
-				       fun {StretchChord C F}
-					  case C
-					  of nil then nil
-					  [] H|T then {StretchNote N F}|{StretchChord T F}
-					  end
-				       end
-				    in
-				       {StretchChord H F}
-				    end
-				 elseif {Label N} == note then
-				    note(name:N.name octave:N.octave sharp:N.sharp duration:(N.duration*F) instrument:N.instrument)
-				 else silence(duration:(N.duration*F))
-				 end
-			      end
-
-			   in
-			      case P
-			      of nil then nil
-			      [] H|T then {StretchNote H F}|{Stretch T F}
-			      end
-			   end
-			end
-
-			fun{Ajouter P K}
-			   case P
-			   of nil then {PartitionToTimedList K}
-			   [] H|T then H|{Ajouter T K}
-			   end
-			end
-			
-		     in
-			case H
-			of stretch(factor:F Part) then
-			   local
-			      P = {PartitionToTimedList Part}
-			      NP = {Stretch P F}
-			   in
-			      {Ajouter NP T}
-			   end
-			[] duration(seconds:S) then
-			   false
+		  local
+		     
+		     fun{Ajouter P K}
+			case P
+			of nil then {PartitionToTimedList K}
+			[] H|T then H|{Ajouter T K}
 			end
 		     end
 		     
-		  else
-		     {NoteToExtended H}|{PartitionToTimedList T}
+		     Transformation = {Label H}
+
+		  in
+		     if Transformation == transpose
+			orelse Transformation == drone
+			orelse Transformation == duration
+			orelse Transformation == stretch
+		     then
+			case H
+			of transpose(semitones:S Part)then
+			   false
+			[] drone(note:N Part) then
+			   false
+			elseif Transformation == stretch orelse Transformation == duration then
+			   local
+			      fun{Stretch P F}
+				 local
+				    fun{StretchNote N F}
+				       case N
+				       of H|T then
+					  local
+					     fun {StretchChord C F}
+						case C
+						of nil then nil
+						[] H|T then {StretchNote N F}|{StretchChord T F}
+						end
+					     end
+					  in
+					     {StretchChord H F}
+					  end
+				       elseif {Label N} == note then
+					  note(name:N.name octave:N.octave sharp:N.sharp duration:(N.duration*F) instrument:N.instrument)
+				       else silence(duration:(N.duration*F))
+				       end
+				    end
+
+				 in
+				    case P
+				    of nil then nil
+				    [] H|T then {StretchNote H F}|{Stretch T F}
+				    end
+				 end
+			      end
+			   in
+			       case H
+			      of stretch(factor:F Part) then
+				 local
+				    P = {PartitionToTimedList Part}
+				    NP = {Stretch P F}
+				 in
+				    {Ajouter NP T}
+				 end
+			      [] duration(seconds:S) then
+				 false
+			       end
+			   end
+			end
+		     else
+			{NoteToExtended H}|{PartitionToTimedList T}
+		     end
 		  end
 	       end
 	    end
@@ -120,6 +129,5 @@ fun {PartitionToTimedList Partition}
       end
    end
 end
-
       
 {Browse {PartitionToTimedList [stretch(factor: 3.0 [a stretch(factor:3.0 [a a5 a#5 silence]) a])] }}
