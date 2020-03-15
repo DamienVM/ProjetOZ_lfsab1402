@@ -255,9 +255,24 @@ local
       [] H|T then {Assembler {NoteToEchantillon H} {Echantillon T}}
       end
    end
-   
 
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%ù
+   fun{Repeat N Music}
+      if N == 0 then nil
+      else {Assembler Music {Repeat N-1 Music}}
+      end
+   end
+
+   fun {DoReverse X Y}
+      case X of nil then Y
+      [] X|Xr then {DoReverse Xr X|Y}
+      end
+   end
+   
+   fun {Reverse Music}
+      {DoReverse Music nil}
+   end
+
+   
 
    fun {PartitionToTimedList Partition}
       case Partition
@@ -323,7 +338,7 @@ local
       end
    end
 
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   
 
    fun{Mix P2T Music}
       case Music
@@ -338,6 +353,13 @@ local
 	    in
 	       {AjouterMix {Echantillon NP} Mix P2T T}
 	    end
+	 []repeat(amount:N Music) then
+	    local
+	       Echantillon = {Mix P2T Music}
+	    in
+	       {AjouterMix {Repeat N Echantillon} Mix P2T T}
+	    end
+	    
 	 end
       end
    end
@@ -353,6 +375,15 @@ in
 				     ]
 	   }
    }
+
+   {Browse {Mix PartitionToTimedList [repeat(amount:4
+					     partition([a a a]
+						      )
+					    )
+				     ]
+	   }
+   }
+   {
 end
 
 
