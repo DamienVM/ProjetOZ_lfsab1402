@@ -207,8 +207,37 @@ fun {PartitionToTimedList Partition}
 				 in
 				    {Ajouter NP T}
 				 end
-			      [] duration(seconds:S) then
-				 false
+			       [] duration(seconds:S Part) then
+				  local
+				     fun{Duration Part S}
+					local
+					   fun{Sum Part Acc}
+					      case Part
+					      of nil then Acc
+					      [] H|T then
+						 case H
+						 of K|J then
+						    {Sum T Acc+K.duration}
+						 else
+						    {Sum T Acc+H.duration}
+						 end
+					      end
+					   end
+					   Duree
+					   Facteur
+					in
+					   Duree = {Sum Part 0.0}
+					   Facteur = S/Duree
+					   {Stretch Part Facteur} 
+					   
+					end					
+				     end
+				     N = {PartitionToTimedList Part}
+				     NP
+				  in
+				     NP = {Duration N S}
+				     {Ajouter NP T}
+				  end	  
 			       end
 			   end
 			end
@@ -228,6 +257,6 @@ end
 
 
 
-{Browse {PartitionToTimedList [a transpose([a a5 a6] semitones:~25)]}}
+{Browse {PartitionToTimedList [duration([a a a]  seconds:7.0)]}}
 
 
